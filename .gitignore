@@ -11,8 +11,15 @@ __pycache__/
 
 # Virtual environments
 venv/
+.venv/
 env/
 ENV/
+
+# Testing and linting
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
 
 # ChromaDB
 backend/chroma_db/

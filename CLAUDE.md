@@ -10,15 +10,31 @@ A full-stack RAG (Retrieval-Augmented Generation) chatbot that lets users query 
 
 ```bash
 # Install dependencies (requires uv package manager)
-uv sync
+uv sync --extra dev --extra test
 
 # Run the dev server (FastAPI with hot reload on port 8000)
 ./run.sh
 # or directly:
 cd backend && uv run uvicorn app:app --reload --port 8000
 
-# No test suite or linting is configured yet
+# Code quality tools
+./format.sh        # Format code with black
+./lint.sh          # Run ruff linter
+./fix.sh           # Auto-format and fix linting issues
+./check.sh         # Run all checks (format check, lint, tests)
+
+# Run tests
+cd backend && uv run pytest
 ```
+
+## Code Quality
+
+The project uses:
+- **black** for code formatting (line length: 100)
+- **ruff** for fast linting (includes import sorting, pyflakes, bugbear, etc.)
+- **pytest** for testing
+
+All code is automatically formatted and linted. Run `./check.sh` before committing to ensure all checks pass.
 
 ## Environment Setup
 
