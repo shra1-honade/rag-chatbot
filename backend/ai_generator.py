@@ -1,5 +1,5 @@
 import anthropic
-from typing import List, Optional
+
 
 class AIGenerator:
     """Handles interactions with Anthropic's Claude API for generating responses"""
@@ -42,16 +42,15 @@ Provide only the direct answer to what was asked.
         self.model = model
 
         # Pre-build base API parameters
-        self.base_params = {
-            "model": self.model,
-            "temperature": 0,
-            "max_tokens": 800
-        }
+        self.base_params = {"model": self.model, "temperature": 0, "max_tokens": 800}
 
-    def generate_response(self, query: str,
-                         conversation_history: Optional[str] = None,
-                         tools: Optional[List] = None,
-                         tool_manager=None) -> str:
+    def generate_response(
+        self,
+        query: str,
+        conversation_history: str | None = None,
+        tools: list | None = None,
+        tool_manager=None,
+    ) -> str:
         """
         Generate AI response with optional tool usage and conversation context.
 
@@ -76,7 +75,7 @@ Provide only the direct answer to what was asked.
         api_params = {
             **self.base_params,
             "messages": [{"role": "user", "content": query}],
-            "system": system_content
+            "system": system_content,
         }
 
         # Add tools if available
@@ -105,16 +104,14 @@ Provide only the direct answer to what was asked.
                     except Exception as e:
                         result = f"Error executing tool: {e}"
                         tool_failed = True
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
-                        "content": result
-                    })
+                    tool_results.append(
+                        {"type": "tool_result", "tool_use_id": block.id, "content": result}
+                    )
 
             api_params["messages"].append({"role": "user", "content": tool_results})
 
             # On last allowed round or tool failure, remove tools to force text
-            is_last_round = (round_num == self.MAX_TOOL_ROUNDS - 1)
+            is_last_round = round_num == self.MAX_TOOL_ROUNDS - 1
             if tool_failed or is_last_round:
                 api_params.pop("tools", None)
                 api_params.pop("tool_choice", None)

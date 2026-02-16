@@ -1,8 +1,9 @@
 """Unit tests for AIGenerator sequential tool calling"""
-import pytest
-from unittest.mock import MagicMock, patch
-from types import SimpleNamespace
 
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
+
+import pytest
 from ai_generator import AIGenerator
 
 
@@ -47,7 +48,9 @@ class TestDirectTextResponse:
         assert result == "Hello!"
         assert generator.client.messages.create.call_count == 1
 
-    def test_tools_provided_but_claude_responds_with_text(self, generator, tool_manager, sample_tools):
+    def test_tools_provided_but_claude_responds_with_text(
+        self, generator, tool_manager, sample_tools
+    ):
         generator.client.messages.create.return_value = make_response(
             "end_turn", [make_text_block("Direct answer")]
         )
@@ -59,13 +62,15 @@ class TestDirectTextResponse:
 
 class TestSingleToolRound:
     def test_one_tool_call_then_text(self, generator, tool_manager, sample_tools):
-        tool_response = make_response("tool_use", [
-            make_tool_use_block("t1", "search_course_content", {"query": "python"})
-        ])
+        tool_response = make_response(
+            "tool_use", [make_tool_use_block("t1", "search_course_content", {"query": "python"})]
+        )
         text_response = make_response("end_turn", [make_text_block("Here are the results")])
         generator.client.messages.create.side_effect = [tool_response, text_response]
 
-        result = generator.generate_response("search python", tools=sample_tools, tool_manager=tool_manager)
+        result = generator.generate_response(
+            "search python", tools=sample_tools, tool_manager=tool_manager
+        )
 
         assert result == "Here are the results"
         assert generator.client.messages.create.call_count == 2
@@ -76,9 +81,9 @@ class TestSingleToolRound:
         assert "tools" in second_call_kwargs
 
     def test_tool_results_included_in_messages(self, generator, tool_manager, sample_tools):
-        tool_response = make_response("tool_use", [
-            make_tool_use_block("t1", "search_course_content", {"query": "test"})
-        ])
+        tool_response = make_response(
+            "tool_use", [make_tool_use_block("t1", "search_course_content", {"query": "test"})]
+        )
         text_response = make_response("end_turn", [make_text_block("Answer")])
         generator.client.messages.create.side_effect = [tool_response, text_response]
 
@@ -97,18 +102,25 @@ class TestSingleToolRound:
 
 class TestTwoSequentialToolRounds:
     def test_two_rounds_then_text(self, generator, tool_manager, sample_tools):
-        tool_response_1 = make_response("tool_use", [
-            make_tool_use_block("t1", "get_course_outline", {"course_title": "MCP"})
-        ])
-        tool_response_2 = make_response("tool_use", [
-            make_tool_use_block("t2", "search_course_content", {"query": "lesson 4 topic"})
-        ])
+        tool_response_1 = make_response(
+            "tool_use", [make_tool_use_block("t1", "get_course_outline", {"course_title": "MCP"})]
+        )
+        tool_response_2 = make_response(
+            "tool_use",
+            [make_tool_use_block("t2", "search_course_content", {"query": "lesson 4 topic"})],
+        )
         text_response = make_response("end_turn", [make_text_block("Final answer")])
 
-        generator.client.messages.create.side_effect = [tool_response_1, tool_response_2, text_response]
+        generator.client.messages.create.side_effect = [
+            tool_response_1,
+            tool_response_2,
+            text_response,
+        ]
         tool_manager.execute_tool.side_effect = ["outline result", "search result"]
 
-        result = generator.generate_response("complex query", tools=sample_tools, tool_manager=tool_manager)
+        result = generator.generate_response(
+            "complex query", tools=sample_tools, tool_manager=tool_manager
+        )
 
         assert result == "Final answer"
         assert generator.client.messages.create.call_count == 3
@@ -119,15 +131,19 @@ class TestTwoSequentialToolRounds:
         assert "tools" not in third_call_kwargs
 
     def test_messages_accumulate_across_rounds(self, generator, tool_manager, sample_tools):
-        tool_response_1 = make_response("tool_use", [
-            make_tool_use_block("t1", "get_course_outline", {"course_title": "X"})
-        ])
-        tool_response_2 = make_response("tool_use", [
-            make_tool_use_block("t2", "search_course_content", {"query": "y"})
-        ])
+        tool_response_1 = make_response(
+            "tool_use", [make_tool_use_block("t1", "get_course_outline", {"course_title": "X"})]
+        )
+        tool_response_2 = make_response(
+            "tool_use", [make_tool_use_block("t2", "search_course_content", {"query": "y"})]
+        )
         text_response = make_response("end_turn", [make_text_block("Done")])
 
-        generator.client.messages.create.side_effect = [tool_response_1, tool_response_2, text_response]
+        generator.client.messages.create.side_effect = [
+            tool_response_1,
+            tool_response_2,
+            text_response,
+        ]
         tool_manager.execute_tool.side_effect = ["result1", "result2"]
 
         generator.generate_response("q", tools=sample_tools, tool_manager=tool_manager)
@@ -142,9 +158,9 @@ class TestTwoSequentialToolRounds:
 
 class TestErrorHandling:
     def test_tool_exception_sends_error_as_result(self, generator, tool_manager, sample_tools):
-        tool_response = make_response("tool_use", [
-            make_tool_use_block("t1", "search_course_content", {"query": "test"})
-        ])
+        tool_response = make_response(
+            "tool_use", [make_tool_use_block("t1", "search_course_content", {"query": "test"})]
+        )
         text_response = make_response("end_turn", [make_text_block("Sorry, error occurred")])
         generator.client.messages.create.side_effect = [tool_response, text_response]
         tool_manager.execute_tool.side_effect = Exception("connection failed")
@@ -162,9 +178,9 @@ class TestErrorHandling:
         assert "connection failed" in tool_result_content
 
     def test_tool_not_found_string_passed_through(self, generator, tool_manager, sample_tools):
-        tool_response = make_response("tool_use", [
-            make_tool_use_block("t1", "bad_tool", {"query": "test"})
-        ])
+        tool_response = make_response(
+            "tool_use", [make_tool_use_block("t1", "bad_tool", {"query": "test"})]
+        )
         text_response = make_response("end_turn", [make_text_block("No tool found")])
         generator.client.messages.create.side_effect = [tool_response, text_response]
         tool_manager.execute_tool.return_value = "Tool 'bad_tool' not found"
@@ -197,10 +213,10 @@ class TestConversationHistory:
 
 class TestMixedContentBlocks:
     def test_text_extracted_from_mixed_response(self, generator):
-        response = make_response("end_turn", [
-            make_text_block("The answer"),
-            make_tool_use_block("t1", "search", {"q": "x"})
-        ])
+        response = make_response(
+            "end_turn",
+            [make_text_block("The answer"), make_tool_use_block("t1", "search", {"q": "x"})],
+        )
         generator.client.messages.create.return_value = response
 
         result = generator.generate_response("test")
@@ -214,10 +230,10 @@ class TestMixedContentBlocks:
 class TestNoToolManager:
     def test_tool_use_response_without_manager_extracts_text(self, generator, sample_tools):
         """If tool_manager is None, tool_use responses should still return any text content."""
-        response = make_response("tool_use", [
-            make_text_block("Partial text"),
-            make_tool_use_block("t1", "search", {"q": "x"})
-        ])
+        response = make_response(
+            "tool_use",
+            [make_text_block("Partial text"), make_tool_use_block("t1", "search", {"q": "x"})],
+        )
         generator.client.messages.create.return_value = response
 
         result = generator.generate_response("test", tools=sample_tools)
