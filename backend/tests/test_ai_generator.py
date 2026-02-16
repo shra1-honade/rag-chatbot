@@ -6,6 +6,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from ai_generator import AIGenerator
 
+pytestmark = pytest.mark.unit
+
 
 def make_text_block(text):
     return SimpleNamespace(type="text", text=text)
