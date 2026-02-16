@@ -93,14 +93,27 @@ async def get_course_stats():
 @app.on_event("startup")
 async def startup_event():
     """Load initial documents on startup"""
+    # Print ChromaDB status to diagnose issues
+    try:
+        course_count = rag_system.vector_store.get_course_count()
+        print(f"✓ ChromaDB initialized successfully: {course_count} courses in database")
+    except Exception as e:
+        print(f"✗ ChromaDB initialization error: {e}")
+        import traceback
+        traceback.print_exc()
+
     docs_path = "../docs"
     if os.path.exists(docs_path):
-        print("Loading initial documents...")
+        print(f"Loading documents from {os.path.abspath(docs_path)}...")
         try:
             courses, chunks = rag_system.add_course_folder(docs_path, clear_existing=False)
-            print(f"Loaded {courses} courses with {chunks} chunks")
+            print(f"✓ Loaded {courses} courses with {chunks} chunks")
         except Exception as e:
-            print(f"Error loading documents: {e}")
+            print(f"✗ Error loading documents: {e}")
+            import traceback
+            traceback.print_exc()
+    else:
+        print(f"✗ Docs path not found: {os.path.abspath(docs_path)}")
 
 # Custom static file handler with no-cache headers for development
 from fastapi.staticfiles import StaticFiles
